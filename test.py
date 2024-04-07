@@ -2,13 +2,12 @@ import discord
 import os
 import asyncio
 
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
 TOKEN = os.environ.get('DISCORD_TOKEN')
-
-
 
 class MyClient(discord.Client):
     async def on_ready(self):
@@ -75,4 +74,3 @@ intents.message_content = True
 intents.message_content = True
 client = MyClient(intents=intents)
 client.run(TOKEN)
-
