@@ -23,13 +23,26 @@ class MyClient(discord.Client):
             
     async def send_ctf_challenges(self, user):
         # CTF challenges
-        challenge_files = ['csec_wireshark.pcap', 'tcp.pcap']
+        challenges = [
+                {
+                    'filename': 'csec_wireshark.pcap', 
+                    'title' : "Wireshark 1"
+                },
+                {
+                    'filename' : 'tcp.pcap',
+                    'title' : 'Wireshark 2'
+                },
+            ]
 
-        for file_name in challenge_files:
-            file_path = os.path.join('ctf/', file_name)
+        for challenge in challenges:
+            file_path = os.path.join('ctf/', challenge['filename'])
+
             with open(file_path, 'rb') as file:
-                await user.send(file=discord.File(file, filename=file_name))
-                print(f'sent {file_name} to {user.name}')
+                embed = discord.Embed(title = challenge['title'],)
+                await user.send(embed = embed)
+                await user.send(file = discord.File(file, filename = challenge['filename']))
+
+                print(f'Sent {challenge["filename"]} to {user.name}')
 
 intents = discord.Intents.default()
 
