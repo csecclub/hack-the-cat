@@ -1,4 +1,11 @@
 import discord
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TOKEN = os.environ.get('DISCORD_TOKEN')
 
 class MyClient(discord.Client):
     async def on_ready(self):
@@ -13,6 +20,13 @@ class MyClient(discord.Client):
             await message.channel.send('pong')
 
 intents = discord.Intents.default()
+
+intents.typing = True
+intents.presences = True  # Enable the Presence Intent
+intents.members = True    # Enable the Server Members Intent
+intents.message_content = True
+
 intents.message_content = True
 client = MyClient(intents=intents)
-client.run('token')
+client.run(TOKEN)
+
