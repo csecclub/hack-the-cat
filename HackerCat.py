@@ -9,6 +9,10 @@ load_dotenv()
 TOKEN = os.environ.get('DISCORD_TOKEN')
 
 class MyClient(discord.Client):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.users_in_challenges = set()  # Set to track users in challenges
+
     async def on_ready(self):
         print('Logged on as', self.user)
 
@@ -30,44 +34,43 @@ class MyClient(discord.Client):
             await asyncio.sleep(.5)  # Wait for 1/2 seconds
             await message.author.send("When ready enter: {START HERE}")
 
-        # Start ctf challenges
-        if message.content == "START HERE" and self.start_here:
+         # Start ctf challenges
+        elif message.content == "START HERE" and message.author not in self.users_in_challenges:
             await self.send_ctf_challenges(message.author)
-            self.start_here = False
 
-        # Continue challenges if already started
-        if self.start_here is False:
-            await self.send_ctf_challenges(message.author)
+         # Validate answers
+        elif message.author in self.users_in_challenges:
+            await self.validate_answer(message.author, message.content)
 
     async def send_ctf_challenges(self, user):
         challenges = [
             {
                 'filename': 'csec_wireshark.pcap',
-                'title': "TCP 1",
+                'title': "Wireshark: TCP 1",
                 'Question': "What's the hidden flag?(csec{xxxxx})",
             },
             {
                 'filename': 'splitTCP.pcap',
-                'title': 'Wireshark: TCP2 2',
+                'title': 'Wireshark: TCP 2',
                 'Question': 'Whats the hidden flag?(bayFLAG{xxxx})',
             },
             {
                 'filename': 'DNS1.pcap',
                 'title': 'Wireshark: DNS 1',
-                'Question 1': '1. What is the type of the DNS query requested?',
-                'Question 2': "2. What domain was requested?",
-                'Question 3': "3. How many items were in the response?",
-                'Question 4': "4. What is the TTL for all of the DNS records?\n(note that this is the TTL for the DNS record, not the IP packet.)",
-                'Question 5': "5. What is the IP address for the 'welcome' subdomain?",
+                'Question 1': 'What is the type of the DNS query requested?',
+                'Question 2': "What domain was requested?",
+                'Question 3': "How many items were in the response?",
+                'Question 4': "What is the TTL for all of the DNS records?\n(note that this is the TTL for the DNS record, not the IP packet.)\n(also can answer using{# h}{# m}{# s})",
+                'Question 5': "What is the IP address for the 'welcome' subdomain?",
             },
             {
                 'filename': 'HTTP1.pcap',
                 'title': 'Wireshark: HTTP 1',
-                'Question 1': '1. What Linux tool was used to execute a file download?',
-                'Question 2': "2. What is the name of the web server software that handled the request?",
-                'Question 3': "3. What IP address initiated request?",
-                'Question 4': "4. What is the IP address of the server?",
-                'Question 5': "5. What is the md5sum of the file downloaded?",
+                'Question 1': 'What Linux tool was used to execute a file download?',
+                'Question 2': "What is the name of the web server software that handled the request?",
+                'Question 3': "What IP address initiated request?",
+                'Question 4': "What is the IP address of the server?",
+                'Question 5': "What is the md5sum of the file downloaded?",
             },
         ]
 
@@ -85,10 +88,13 @@ class MyClient(discord.Client):
                 await user.send(f"**{question_num}. {challenge[question]}**")
                 answer = await self.wait_for_answer(user)
                 if self.is_answer_correct(challenge, question, answer.content):
-                    await user.send(f"✅ Correct answer for question {question_num}!")
-                else:
+                        await user.send(f"✅ Correct answer for question {question_num}!")
+                while not self.is_answer_correct(challenge, question, answer.content):
                     await user.send(f"❌ Incorrect answer for question {question_num}. Please try again.")
-                    return
+                    answer = await self.wait_for_answer(user)
+                    if self.is_answer_correct(challenge, question, answer.content):
+                        await user.send(f"✅ Correct answer for question {question_num}!")
+                
 
     async def wait_for_answer(self, user):
         def check(message):
@@ -96,9 +102,9 @@ class MyClient(discord.Client):
         return await self.wait_for('message', check=check)
 
     def is_answer_correct(self, challenge, question, answer):
-        if challenge['title'] == "TCP 1" and question == "Question":
+        if challenge['title'] == "Wireshark: TCP 1" and question == "Question":
             return answer == "csec{1N_2040_AI_wi11_D3BU6_our_C0de}"
-        elif challenge['title'] == "TCP 2" and question == "Question":
+        elif challenge['title'] == "Wireshark: TCP 2" and question == "Question":
             return answer == "bayFLAG{H4v3_y0u_c53ck3d_0uT_M0BI?}"
         elif challenge['title'] == "Wireshark: DNS 1":
             if question == "Question 1":
@@ -108,7 +114,7 @@ class MyClient(discord.Client):
             elif question == "Question 3":
                 return answer == "4"
             elif question == "Question 4":
-                return answer == "1 hour" or answer == "3600"
+                return answer == "1 h" or answer == "3600 s" or answer == "60 m"
             elif question == "Question 5":
                 return answer == "1.1.1.1"
         elif challenge['title'] == "Wireshark: HTTP 1":
@@ -124,6 +130,8 @@ class MyClient(discord.Client):
                 return answer == "966007c476e0c200fba8b28b250a6379"
         else:
             return False
+
+    
 
 intents = discord.Intents.default()
 intents.typing = True
