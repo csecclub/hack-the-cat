@@ -57,6 +57,12 @@ DISCORD_PUBLIC_KEY = ""
 DISCORD_TOKEN = ""
 ```
 
+## Authors
+Betim Hodza and Diego Vester originally setup this repo,
+to see a full list follow this link [Here](https://github.com/csecclub/hack-the-cat/graphs/contributors)
+
+
+
 ## License
 
 This project is licensed under the **MIT license**.
