@@ -5,21 +5,39 @@ import asyncio
 from dotenv import load_dotenv
 
 load_dotenv()
-
 TOKEN = os.environ.get('DISCORD_TOKEN')
+
+
 
 class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.users_in_challenges = set()  # Set to track users in challenges
+        self.user_scores = {} # new dictionary to store all player's scores
 
     async def on_ready(self):
         print('Logged on as', self.user)
+
+    async def display_all_scores(self, message):
+        if not self.user_scores:
+            await message.channel.send("No scores recorded yet.")
+            return
+
+        scores_list = sorted(self.user_scores.items(), key=lambda x: x[1], reverse=True)
+        score_message = "**Current Scores:**\n"
+        for user_id, score in scores_list:
+            user = self.get_user(user_id)
+            if user:
+                score_message += f"{user.name}: {score} points\n"
+        
+        await message.channel.send(score_message)
 
     async def on_message(self, message):
         # don't respond to ourselves
         if message.author == self.user:
             return
+        elif message.content.lower() == "!scores":
+            await self.display_all_scores(message)
 
         # welcome message when typed FREE
         if message.content == 'FREE':
@@ -34,6 +52,9 @@ class MyClient(discord.Client):
             await asyncio.sleep(.5)  # Wait for 1/2 seconds
             await message.author.send("When ready enter: {START HERE}")
 
+        elif message.content == 'admin':
+            await self.display_all_scores(message)
+
          # Start ctf challenges
         elif message.content == "START HERE" and message.author not in self.users_in_challenges:
             await self.send_ctf_challenges(message.author)
@@ -43,6 +64,7 @@ class MyClient(discord.Client):
             await self.validate_answer(message.author, message.content)
 
     async def send_ctf_challenges(self, user):
+        points = 0
         challenges = [
             {
                 'filename': 'csec_wireshark.pcap',
@@ -87,8 +109,17 @@ class MyClient(discord.Client):
             for question_num, question in enumerate(questions, start=1):
                 await user.send(f"**{question_num}. {challenge[question]}**")
                 answer = await self.wait_for_answer(user)
+
                 if self.is_answer_correct(challenge, question, answer.content):
-                        await user.send(f"✅ Correct answer for question {question_num}!")
+                        # if user not in scores dictoinary add them
+                        if user.id not in self.user_scores:
+                            self.user_scores[user.id] = 0
+
+                        self.user_scores[user.id] += 1  # Increment score for the user
+                        await user.send(f"✅ Correct answer for question {question_num}! +1")
+                        await user.send(f"Your score: {self.user_scores[user.id]}")
+                        print(f"Score: {user.id} | {self.user_scores[user.id]}")
+
                 while not self.is_answer_correct(challenge, question, answer.content):
                     await user.send(f"❌ Incorrect answer for question {question_num}. Please try again.")
                     answer = await self.wait_for_answer(user)
