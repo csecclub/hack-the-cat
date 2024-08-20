@@ -111,8 +111,8 @@ class MyClient(discord.Client):
                 'Question 2': 'When was the image created? Round down to the nearest minute [format: YYYY:MM:DD:MM:SS]',
                 'Question 3': 'What are the dimensions of the image? (ex: 800x600)',
                 'Question 4': 'What is the make of the camera that took the picture?',
-                'Question 5': 'What is the make of the camera that took the picture?',
-                'Question 6': 'What is the make of the camera that took the picture?',
+                'Question 5': 'What is the model of the camera that took the picture?',
+                'Question 6': 'What is the exposure time for the picture? (ex: 1/200)',
             },
             {
                 'filename': '',
