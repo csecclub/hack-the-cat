@@ -182,6 +182,7 @@ class MyClient(discord.Client):
                     if user.id not in self.user_scores:
                         self.user_scores[user.id] = 0
 
+                    points += 1
                     self.user_scores[user.id] += 1  # Increment score for the user
                     await user.send(f"✅ Correct answer! +1")
                     await user.send(f"Your score: {self.user_scores[user.id]}")
@@ -267,6 +268,7 @@ class MyClient(discord.Client):
                     if user.id not in self.user_scores:
                         self.user_scores[user.id] = 0
 
+                    points += 1
                     self.user_scores[user.id] += 1  # Increment score for the user
                     await user.send(f"✅ Correct answer! +1")
                     await user.send(f"Your score: {self.user_scores[user.id]}")
