@@ -59,15 +59,21 @@ class MyClient(discord.Client):
             await asyncio.sleep(.5)  # Wait for 1/2 seconds
             await message.author.send("make sure to submit what is inside the {} (=^・^=)")
             await asyncio.sleep(.5)  # Wait for 1/2 seconds
-            await message.author.send("When ready enter: {START HERE}")
+            await message.author.send("We have 2 different challanges, an easy one and a harder one!")
+            await asyncio.sleep(.5)  # Wait for 1/2 seconds
+            await message.author.send("When ready enter: {START EASY} or {START EXTREME}")
 
         # admin command to display scores
         elif message.content == 'admin':
             await self.display_all_scores(message)
 
         # Start ctf challenges if users aren't in the challenge
-        elif message.content == "START HERE" and message.author not in self.users_in_challenges:
-            await self.send_ctf_challenges(message.author)
+        elif message.content == "START EASY" and message.author not in self.users_in_challenges:
+            await self.send_ctf_easy_challenges(message.author)
+
+        # Start ctf challenges if users aren't in the challenge
+        elif message.content == "START EXTREME" and message.author not in self.users_in_challenges:
+            await self.send_ctf_extreme_challenges(message.author)
 
         # Validate answers if users are in the challenge
         elif message.author in self.users_in_challenges:
@@ -94,8 +100,8 @@ class MyClient(discord.Client):
         await message.channel.send(score_message)
 
 
-    # send's ctf challanges to the player
-    async def send_ctf_challenges(self, user):
+    # send's EASY ctf challanges to the player
+    async def send_ctf_easy_challenges(self, user):
         # stores total score per user
         points = 0
         # stores all challenges
@@ -166,12 +172,12 @@ class MyClient(discord.Client):
 
                 await user.send(f"**{question_num}. {challenge[question]}**")
 
-        while points <= 19:
+        while points < 19:
             #get an answer from the user this prevents multiple questions from being asked
             answer = await self.wait_for_answer(user) 
 
             # validation of that question
-            if self.is_answer_correct(challenge, question, answer.content):
+            if self.is_answer_easy_correct(challenge, question, answer.content):
                     # if user not in scores dictoinary add them
                     if user.id not in self.user_scores:
                         self.user_scores[user.id] = 0
@@ -183,9 +189,93 @@ class MyClient(discord.Client):
                 await user.send(f"❌ Incorrect answer. Please try again.")
         
         #ending user message once all CTFs completed
-        await user.send(f'CTF Completed! come get your prize!')
-        print(f'{user.name} Has completed all the CTFS')
+        await user.send(f'EASY CTF Completed! come get your prize!')
+        print(f'{user.name} Has completed all the EASY CTFS')
+
+
+        
+    # send's EXTREME ctf challanges to the player
+    async def send_ctf_extreme_challenges(self, user):
+        # stores total score per user
+        points = 0
+        # stores all challenges
+        challenges = [
+            {
+                'filename': 'story.txt',
+                'title': "Cryptography: You can't Rome this short story without Caesar. ",
+                'Question 1': "What's the hidden flag?{ xxxxx }",
+            },
+            {
+                'filename': 'ciphertext.txt',
+                'title': "Cryptography: Uh oh, looks like my friend thought using multiple crypto algorithms meant he'd be safer! Show him it's quality over quantity! Hint 1:Did you know letters in ascii can be represented by 2 bytes? hint 2: There are 3 ciphers in total.",
+                'Question 2': 'What is the flag?',
+            },
+            {
+                'filename': 'splitTCP.pcap',
+                'title': 'Network Traffic Analysis: SplitTCP - Take a look at this odd pcap file, the flag is more obvious than it seems.',
+                'Question 3': 'Format is: bayFLAG{ your_flag_here } HINT: length of the message is important:',
+            },
+            {
+                'filename': 'rsa1.txt',
+                'title': 'Basic RSA:',
+                'Question 4': "These three numbers from my office are suspicious. I found N and c scribbled on sticky notes at Bob's desk, and d at Alice's desk. Are my coworkers hiding something from me? (only submit what's in the brackets)",
+            },
+            {
+                'filename': 'sus.png',
+                'title': "Steganography: Hidden Bit. Hint: You can secretly hide pictures inside the 'little details' of other pictures. Look closely at those tiny details to solve the CTF challenge!",
+                'Question 5': "Find out what's going on with the attached file",
+            },
+            {
+                'filename': 'rsa2.txt',
+                'title': "These numbers from the school library are raising eyebrows:  ",
+                'Question 6': "I found two sets of public keys, e1 and n, hidden in Bob's textbook, and e2 and n in Alice's notebook. Then, I stumbled upon two encrypted messages, c1 and c2, left behind in the computer lab. Could my classmates be up to something mysterious? Find out what's going on with the attached messages",
+            },
+        ]
+
+        # for each challange within the list of challanges, 
+        for challenge in challenges:
+            # if theres not file, then don't send one, if there is, then do
+            if challenge['filename'] != "":
+                file_path = os.path.join('ctf/', challenge['filename'])
+                with open(file_path, 'rb') as file:
+                    embed = discord.Embed(title=challenge['title'])
+                    await user.send(embed=embed)
+                    await asyncio.sleep(0.2)  # Wait
+
+                    await user.send(file=discord.File(file, filename=challenge['filename']))
+                    print(f'Sent {challenge["filename"]} to {user.name}')
+            else: # send with out file
+                embed = discord.Embed(title=challenge['title'])
+                await user.send(embed=embed)
+                await asyncio.sleep(0.2)  # Wait
                 
+                
+            # create an array of questions and grab each question that starts with 'Question'
+            questions = [q for q in challenge if q.startswith('Question')]
+            # go through each question number
+            for question_num, question in enumerate(questions, start=1):
+
+                await user.send(f"**{question_num}. {challenge[question]}**")
+
+        while points < 6:
+            #get an answer from the user this prevents multiple questions from being asked
+            answer = await self.wait_for_answer(user) 
+
+            # validation of that question
+            if self.is_answer_extreme_correct(challenge, question, answer.content):
+                    # if user not in scores dictoinary add them
+                    if user.id not in self.user_scores:
+                        self.user_scores[user.id] = 0
+
+                    self.user_scores[user.id] += 1  # Increment score for the user
+                    await user.send(f"✅ Correct answer! +1")
+                    await user.send(f"Your score: {self.user_scores[user.id]}")
+            else: #incorrect answer, enter while loop again
+                await user.send(f"❌ Incorrect answer. Please try again.")
+        
+        #ending user message once all CTFs completed
+        await user.send(f'EXTREME CTF Completed! come get your prize!')
+        print(f'{user.name} Has completed all the EXTREME CTFS')
 
     # bot waits for an answer
     async def wait_for_answer(self, user):
@@ -194,7 +284,7 @@ class MyClient(discord.Client):
         return await self.wait_for('message', check=check)
 
     # need to make this track which question has already been answered or not
-    def is_answer_correct(self, challenge, question, answer):
+    def is_answer_easy_correct(self, challenge, question, answer):
         
         global question1
         global question2
@@ -273,6 +363,36 @@ class MyClient(discord.Client):
             return True
         elif not question19 and answer == "harvey":
             question19 = True
+            return True
+        else:
+            return False
+        
+    def is_answer_extreme_correct(self, challenge, question, answer):
+        
+        global question1
+        global question2
+        global question3
+        global question4
+        global question5
+        global question6
+
+        if not question1 and answer == "owieouchthishurtsbrutus":
+            question1 = True
+            return True
+        elif not question2 and answer == "csec_ctf{h4ck3r_c@t}":
+            question2 = True
+            return True
+        elif not question3 and answer == "bayFLAG{H4v3_y0u_c53ck3d_0uT_M0BI?}":
+            question3 = True
+            return True
+        elif not question4 and answer == "Leo_&_Leo_are_pr0ud_0f_y0u!!":
+            question4 = True
+            return True
+        elif not question5 and answer == "csec_flag{DoYouLikePancakesOrWaffles}":
+            question5 = True
+            return True
+        elif not question6 and answer == "same_message_mod_different_exponent":
+            question6 = True
             return True
         else:
             return False
